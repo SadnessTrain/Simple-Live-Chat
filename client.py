@@ -1,9 +1,8 @@
 import socket
 import threading
 import select
-import click
 
-NICKNAME=input("Input nickname to use during chatting:\n")
+NICKNAME=input("Input nickname to use during chatting (no spaces!):\n")
 
 HEADER=64
 PORT=5050
@@ -34,8 +33,10 @@ def send(msg):
 
 def connect():
     global connected
+    connected = True
 
-    connected=True
+    send("!nickname "+NICKNAME)
+
     while connected:
         user_input=input()
         send(user_input)

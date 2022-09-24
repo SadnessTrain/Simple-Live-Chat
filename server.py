@@ -9,6 +9,8 @@ SERVER=socket.gethostbyname(socket.gethostname())   #gets your ip
 ADDR=(SERVER,PORT)  #tuple for binding socket to adress
 FORMAT="UTF-8"
 DISCONNECT_MESSAGE="!disconnect"
+NICKNAME_MESSAGE="!nickname"
+NICKNAME=""
 
 PING_MESSAGE="!ping"
 client_LAST_MESSAGE=""
@@ -25,6 +27,7 @@ all_messages=[]
 def update_chat():
     global client_LAST_MESSAGE
 
+    print("test update chat")
     if len(all_messages)>0:
         if all_messages[-1] != client_LAST_MESSAGE:
             for user in all_connections:
@@ -37,6 +40,8 @@ def update_chat():
 def handle_client(conn, addr):  #handle individual connections between client and server
     print(f"[NEW CONNECTION] {addr} connected.")
     all_connections.append(conn)
+    global NICKNAME
+    NICKNAME=addr
 
     connected=True
     while connected:
@@ -46,11 +51,15 @@ def handle_client(conn, addr):  #handle individual connections between client an
             msg_length=int(msg_length)  #header is in bytes so convert to int
             msg=conn.recv(msg_length).decode(FORMAT)
             if msg!=PING_MESSAGE:
-                all_messages.append(f"[{addr}]: {msg}")
-                print(f"[{addr}]: {msg}")
-            if msg==DISCONNECT_MESSAGE:
-                connected=False
-                all_connections.remove(conn)
+                if msg[0]=="!":
+                    if msg.split()[0]==NICKNAME_MESSAGE:
+                        NICKNAME=msg.split()[1]
+                    elif msg==DISCONNECT_MESSAGE:
+                        connected=False
+                        all_connections.remove(conn)
+                else:
+                    all_messages.append(f"[{NICKNAME}]: {msg}")
+                    print(f"[{NICKNAME}]: {msg}")
             if msg==PING_MESSAGE:
                 update_chat()
 
