@@ -10,14 +10,33 @@ ADDR=(SERVER,PORT)  #tuple for binding socket to adress
 FORMAT="UTF-8"
 DISCONNECT_MESSAGE="!disconnect"
 
+PING_MESSAGE="!ping"
+client_LAST_MESSAGE=""
+
 server=socket.socket(socket.AF_INET, socket.SOCK_STREAM)    #(family,type)
 server.bind(ADDR)
 
 #make thread/protocol that stores all messages sent to server in a list, and sent them to all connected clients
 #alternative: have cliends send a ping command that constantly asks if a new message has been sent, if yes it send that back. think this still uses the list
 
+all_connections=[]
+all_messages=[]
+
+def update_chat():
+    global client_LAST_MESSAGE
+
+    if len(all_messages)>0:
+        if all_messages[-1] != client_LAST_MESSAGE:
+            for user in all_connections:
+                user.send(all_messages[-1].encode(FORMAT))
+                client_LAST_MESSAGE = all_messages[-1]
+    else:
+        for user in all_connections:
+            user.send("".encode(FORMAT))
+
 def handle_client(conn, addr):  #handle individual connections between client and server
     print(f"[NEW CONNECTION] {addr} connected.")
+    all_connections.append(conn)
 
     connected=True
     while connected:
@@ -26,11 +45,14 @@ def handle_client(conn, addr):  #handle individual connections between client an
         if msg_length:  #if message not empty(some empty message is sent on connect)
             msg_length=int(msg_length)  #header is in bytes so convert to int
             msg=conn.recv(msg_length).decode(FORMAT)
+            if msg!=PING_MESSAGE:
+                all_messages.append(f"[{addr}]: {msg}")
+                print(f"[{addr}]: {msg}")
             if msg==DISCONNECT_MESSAGE:
                 connected=False
-
-            print(f"[{addr}]: {msg}")
-            conn.send("msg recieved".encode(FORMAT))
+                all_connections.remove(conn)
+            if msg==PING_MESSAGE:
+                update_chat()
 
     conn.close()
 
