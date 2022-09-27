@@ -2,6 +2,7 @@ import socket
 import threading
 
 #you can import an use pickle to send whole python objects
+import requests as requests
 
 HEADER=64   #first message from client is always header, and says how many bytes next one will be
 PORT=5050
@@ -10,7 +11,6 @@ ADDR=(SERVER,PORT)  #tuple for binding socket to adress
 FORMAT="UTF-8"
 DISCONNECT_MESSAGE="!disconnect"
 NICKNAME_MESSAGE="!nickname"
-NICKNAME=""
 
 PING_MESSAGE="!ping"
 client_LAST_MESSAGE=""
@@ -18,16 +18,12 @@ client_LAST_MESSAGE=""
 server=socket.socket(socket.AF_INET, socket.SOCK_STREAM)    #(family,type)
 server.bind(ADDR)
 
-#make thread/protocol that stores all messages sent to server in a list, and sent them to all connected clients
-#alternative: have cliends send a ping command that constantly asks if a new message has been sent, if yes it send that back. think this still uses the list
-
 all_connections=[]
 all_messages=[]
 
 def update_chat():
     global client_LAST_MESSAGE
 
-    print("test update chat")
     if len(all_messages)>0:
         if all_messages[-1] != client_LAST_MESSAGE:
             for user in all_connections:
@@ -40,8 +36,7 @@ def update_chat():
 def handle_client(conn, addr):  #handle individual connections between client and server
     print(f"[NEW CONNECTION] {addr} connected.")
     all_connections.append(conn)
-    global NICKNAME
-    NICKNAME=addr
+    nickname=addr
 
     connected=True
     while connected:
@@ -53,13 +48,13 @@ def handle_client(conn, addr):  #handle individual connections between client an
             if msg!=PING_MESSAGE:
                 if msg[0]=="!":
                     if msg.split()[0]==NICKNAME_MESSAGE:
-                        NICKNAME=msg.split()[1]
+                        nickname=msg.split()[1]
                     elif msg==DISCONNECT_MESSAGE:
                         connected=False
                         all_connections.remove(conn)
                 else:
-                    all_messages.append(f"[{NICKNAME}]: {msg}")
-                    print(f"[{NICKNAME}]: {msg}")
+                    all_messages.append(f"[{nickname}]: {msg}")
+                    print(f"[{nickname}]: {msg}")
             if msg==PING_MESSAGE:
                 update_chat()
 

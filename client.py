@@ -1,5 +1,7 @@
 import socket
 import threading
+import time
+
 import select
 
 NICKNAME=input("Input nickname to use during chatting (no spaces!):\n")
@@ -31,11 +33,11 @@ def send(msg):
     client.send(send_length)
     client.send(message)
 
+send("!nickname "+NICKNAME)
+
 def connect():
     global connected
     connected = True
-
-    send("!nickname "+NICKNAME)
 
     while connected:
         user_input=input()
